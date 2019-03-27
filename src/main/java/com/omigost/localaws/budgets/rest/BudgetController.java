@@ -1,7 +1,6 @@
 package com.omigost.localaws.budgets.rest;
 
-import com.amazonaws.services.budgets.model.Budget;
-import com.amazonaws.services.budgets.model.Spend;
+import com.amazonaws.services.budgets.model.*;
 import com.omigost.localaws.budgets.aws.BudgetService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -24,15 +23,21 @@ public class BudgetController {
     
     private Object getEndpointResponse(final String amzTarget) {
     	if (amzTarget.equals("AWSBudgetServiceGateway.DescribeBudgets")) {
-	        return new ArrayList<Budget>() {{
-	            add(
-	                new Budget()
-	                    .withBudgetName("test-budget")
-	                    .withBudgetLimit(new Spend().withUnit("USD").withAmount(new BigDecimal(100)))
-	            );
-	        }};
+	        return new DescribeBudgetsResult()
+		    .withBudgets(new ArrayList<Budget>() {{
+			add(
+			    new Budget()
+				.withBudgetName("test-budget")
+				.withBudgetLimit(new Spend().withUnit("USD").withAmount(new BigDecimal(100)))
+			);
+		    }});
+	} else if(amzTarget.equals("AWSBudgetServiceGateway.DeleteBudget")) {
+		return new DeleteBudgetResult();
+	} else if(amzTarget.equals("AWSBudgetServiceGateway.DescribeBudget")) {
+		return new DescribeBudgetResult()
+		  .withBudget(new Budget());
     	} else if(amzTarget.equals("AWSBudgetServiceGateway.CreateBudget")) {
-    		return new Budget();
+    		return new CreateBudgetResult();
     	} else {
     		return null;
     	}
