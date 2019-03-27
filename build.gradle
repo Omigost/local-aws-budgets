@@ -1,0 +1,98 @@
+buildscript {
+    ext {
+        springBootVersion = '2.1.0.RELEASE'
+    }
+    repositories {
+        mavenCentral()
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+        classpath "gradle.plugin.com.palantir.gradle.docker:gradle-docker:0.21.0"
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'eclipse'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+apply plugin: 'com.palantir.docker'
+
+group = 'com.omigost.localaws'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = 8
+
+repositories {
+    mavenCentral()
+}
+
+bootJar {
+    baseName = 'budgets'
+    version = '0.1.0'
+}
+
+configurations {
+    integrationTestCompile.extendsFrom testCompile
+    integrationTestRuntime.extendsFrom testRuntime
+}
+
+sourceSets {
+    integrationTest {
+        java {
+            compileClasspath += main.output + test.output
+            runtimeClasspath += main.output + test.output
+            srcDir file('src/integration-test/java')
+        }
+        resources.srcDir file('src/integration-test/resources')
+    }
+}
+
+dependencies {
+    implementation('org.springframework.boot:spring-boot-starter-web')
+    testImplementation('org.springframework.boot:spring-boot-starter-test')
+    implementation('org.projectlombok:lombok:1.18.4')
+
+    implementation('org.postgresql:postgresql:42.2.1')
+    implementation('com.amazonaws:aws-java-sdk-iam:1.11.457')
+    implementation('com.amazonaws:aws-java-sdk-organizations:1.11.457')
+    implementation('com.amazonaws:aws-java-sdk-budgets:1.11.475')
+    //all of amazon aws sdk
+    implementation('com.amazonaws:aws-java-sdk:1.11.475')
+
+    compile 'org.testcontainers:junit-jupiter:1.11.0'
+    compile 'org.testcontainers:localstack:1.8.3'
+
+    integrationTestCompile 'org.springframework.boot:spring-boot-starter-web'
+    integrationTestCompile 'org.springframework.boot:spring-boot-starter-test'
+    integrationTestCompile 'org.projectlombok:lombok:1.18.4'
+    integrationTestCompile 'junit:junit:4.12'
+    integrationTestCompile 'org.assertj:assertj-core:3.0.0'
+    integrationTestCompile 'com.amazonaws:aws-java-sdk-sqs:1.11.524'
+    integrationTestCompile 'com.amazonaws:aws-java-sdk-s3:1.11.524'
+    integrationTestCompile 'com.amazonaws:aws-java-sdk-iam:1.11.457'
+    integrationTestCompile 'com.amazonaws:aws-java-sdk-organizations:1.11.457'
+    integrationTestCompile 'com.amazonaws:aws-java-sdk-budgets:1.11.475'
+    integrationTestCompile 'com.amazonaws:aws-java-sdk:1.11.475'
+}
+
+task integrationTest(type: Test) {
+    testClassesDir = sourceSets.integrationTest.output.classesDir
+    classpath = sourceSets.integrationTest.runtimeClasspath
+}
+
+task unpack(type: Copy) {
+    dependsOn bootJar
+    from(zipTree(tasks.bootJar.outputs.files.singleFile))
+    into("build/dependency")
+}
+
+docker {
+    name "styczynski/local-aws-budgets"
+    copySpec.from(tasks.unpack.outputs).into("dependency")
+    dockerfile file('Dockerfile')
+    buildArgs(['DEPENDENCY': "dependency"])
+    noCache true
+}
