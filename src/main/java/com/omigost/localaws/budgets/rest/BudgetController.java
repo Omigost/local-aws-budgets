@@ -21,20 +21,30 @@ public class BudgetController {
     public String hello() {
         return budgetService.hello();
     }
-
-    @GetMapping("/describe-budgets")
-    public List<Budget> describeBudgets() {
-        return new ArrayList<Budget>() {{
-            add(
-                new Budget()
-                    .withBudgetName("test-budget")
-                    .withBudgetLimit(new Spend().withUnit("USD").withAmount(new BigDecimal(100)))
-            );
-        }};
+    
+    private Object getEndpointResponse(final String amzTarget) {
+    	if (amzTarget.equals("AWSBudgetServiceGateway.DescribeBudgets")) {
+	        return new ArrayList<Budget>() {{
+	            add(
+	                new Budget()
+	                    .withBudgetName("test-budget")
+	                    .withBudgetLimit(new Spend().withUnit("USD").withAmount(new BigDecimal(100)))
+	            );
+	        }};
+    	} else if(amzTarget.equals("AWSBudgetServiceGateway.CreateBudget")) {
+    		return new Budget();
+    	} else {
+    		return null;
+    	}
     }
 
-    @PostMapping("/get-budget")
-    public Budget createBudeget() {
-        return new Budget();
+    @GetMapping("/")
+    public Object describeBudgetsGet(@RequestHeader("X-Amz-Target") String amzTarget) {
+    	return getEndpointResponse(amzTarget);
+    }
+    
+    @PostMapping("/")
+    public Object describeBudgetsPost(@RequestHeader("X-Amz-Target") String amzTarget) {
+    	return getEndpointResponse(amzTarget);
     }
 }

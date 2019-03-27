@@ -32,6 +32,7 @@ repositories {
 bootJar {
     baseName = 'budgets'
     version = '0.1.0'
+    mainClassName = 'com.omigost.localaws.budgets.ServerApplication'
 }
 
 configurations {
