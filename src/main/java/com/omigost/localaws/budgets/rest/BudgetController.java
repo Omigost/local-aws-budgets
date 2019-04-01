@@ -16,9 +16,9 @@ public class BudgetController {
     @Autowired
     private BudgetService budgetService;
 
-    @GetMapping("/hello")
+    @GetMapping("/health")
     public String hello() {
-        return budgetService.hello();
+        return "OK";
     }
     
     private Object getEndpointResponse(final String amzTarget) {
