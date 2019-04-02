@@ -93,6 +93,25 @@ task unpack(type: Copy) {
     into("build/dependency")
 }
 
+task classpathJar(type: Jar) {
+    inputs.files sourceSets.test.runtimeClasspath
+
+    archiveName = "omigost-budgets.jar"
+    doFirst {
+        // If run in configuration phase, some artifacts may not exist yet (after clean)
+        // and File.toURI canĂ˘â‚¬â„˘t figure out what is directory to add the critical trailing slash.
+        manifest {
+            def classpath = sourceSets.test.runtimeClasspath.files
+            attributes "Class-Path": classpath.collect {f -> f.toURI().toString()}.join(" ")
+        }
+    }
+}
+
+bootRun {
+    classpath = classpathJar.outputs.files
+    main = 'com.omigost.localaws.budgets.ServerApplication'
+}
+
 docker {
     name "styczynski/local-aws-budgets"
     copySpec.from(tasks.unpack.outputs).into("dependency")

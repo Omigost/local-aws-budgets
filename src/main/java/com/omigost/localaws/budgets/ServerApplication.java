@@ -18,7 +18,7 @@ public class ServerApplication {
     }
     
     @Bean
-    public Jackson2ObjectMapperBuilder jacksonBuilder() {
+    public static Jackson2ObjectMapperBuilder jacksonBuilder() {
         Jackson2ObjectMapperBuilder b = new Jackson2ObjectMapperBuilder();
         b.propertyNamingStrategy(PropertyNamingStrategy.UPPER_CAMEL_CASE);
         return b;
