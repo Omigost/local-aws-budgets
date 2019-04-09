@@ -9,7 +9,7 @@ It's designed to use with *Docker* (for example *Testcontainers*)
 
 To build Docker image please type the following commands:
 ```bash
-  $ ./gradlew dockerBuild   # To build Docker image
+  $ ./gradlew docke         # To build Docker image
   $ ./gradlew dockerPush    # To push the image to the repository (you must be logged in with docker login command)
 ```
 
