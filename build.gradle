@@ -113,7 +113,7 @@ bootRun {
 }
 
 docker {
-    name "styczynski/local-aws-budgets"
+    name "omigost/local-aws-budgets"
     copySpec.from(tasks.unpack.outputs).into("dependency")
     dockerfile file('Dockerfile')
     buildArgs(['DEPENDENCY': "dependency"])
