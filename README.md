@@ -1,24 +1,23 @@
-# Omigost Project Backend
+# Omigost AWS Budgets Mock
 
-Build with:
+## Description
+
+This project provides simple mocking feature for AWS Budgets.
+It's designed to use with *Docker* (for example *Testcontainers*)
+
+## Building
+
+To build Docker image please type the following commands:
 ```bash
-./gradlew bootJar
+  $ ./gradlew dockerBuild   # To build Docker image
+  $ ./gradlew dockerPush    # To push the image to the repository (you must be logged in with docker login command)
 ```
 
-To develop in IntelliJ:
+## Running locally
+
+To run the AWS Budgets mock locally please type the following commands into your terminal:
 ```bash
-./gradlew idea
+  $ ./gradlew bootRun
 ```
-and open existing project *'server.ipr'*.
 
-## Setup
-
-Configuration is available in `src/main/resources/application.properties` file.
-
-## Running
-
-```bash
-docker-compose up -d
-docker build -t omigost .
-docker run --network="host" omigost
-```
+The budgets server will be available on port `5000`.
