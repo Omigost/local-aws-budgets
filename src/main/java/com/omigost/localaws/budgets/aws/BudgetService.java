@@ -9,6 +9,7 @@ import com.omigost.localaws.budgets.model.Budget;
 import com.omigost.localaws.budgets.repository.BudgetRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -19,6 +20,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional
 public class BudgetService {
 
     @Autowired
