@@ -1,19 +1,13 @@
 package com.omigost.localaws.budgets.aws;
 
 import com.amazonaws.services.budgets.model.*;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.omigost.localaws.budgets.ServerApplication;
 import com.omigost.localaws.budgets.model.Budget;
 import com.omigost.localaws.budgets.repository.BudgetRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,11 +20,45 @@ public class BudgetService {
     @Autowired
     private BudgetRepository budgets;
 
+    private static Map<String, String> shorthandToMap(final String specs) {
+        String specsString = specs;
+
+        if (specsString.startsWith("{")) {
+            specsString = specsString.substring(1, specsString.length() - 1);
+        }
+
+        specsString = specsString + ",";
+
+        HashMap<String, String> m = new HashMap<>();
+
+        final int len = specsString.length();
+        int level = 0;
+        int lastCutoffPos = 0;
+
+        String keyAcc = "";
+
+        for (int i = 0; i < len; ++i) {
+            if (specsString.charAt(i) == '=' && level == 0) {
+                keyAcc = specsString.substring(lastCutoffPos, i).trim();
+                lastCutoffPos = i + 1;
+            } else if (specsString.charAt(i) == ',' && level == 0) {
+                m.put(keyAcc, specsString.substring(lastCutoffPos, i));
+                lastCutoffPos = i + 1;
+            } else if (specsString.charAt(i) == '{') {
+                ++level;
+            } else if (specsString.charAt(i) == '}') {
+                --level;
+            }
+        }
+
+        return m;
+    }
+
     public DescribeBudgetsResult describeBudgets(final String accountId) {
         return new DescribeBudgetsResult()
-            .withBudgets(
-                budgets.findAll().stream().map(Budget::toAwsBudget).collect(Collectors.toList())
-            );
+                .withBudgets(
+                        budgets.findAll().stream().map(Budget::toAwsBudget).collect(Collectors.toList())
+                );
     }
 
     public DeleteBudgetResult deleteBudget(final String accountId, final String budgetName) {
@@ -44,43 +72,9 @@ public class BudgetService {
             return new DescribeBudgetResult();
         }
         return new DescribeBudgetResult()
-            .withBudget(
-                b.toAwsBudget()
-            );
-    }
-
-    private static Map<String, String> shorthandToMap(final String specs) {
-        String specsString = specs;
-
-        if (specsString.startsWith("{")) {
-            specsString = specsString.substring(1, specsString.length()-1);
-        }
-
-        specsString = specsString + ",";
-
-        HashMap<String, String> m = new HashMap<>();
-
-        final int len = specsString.length();
-        int level = 0;
-        int lastCutoffPos = 0;
-
-        String keyAcc = "";
-
-        for(int i=0;i<len;++i) {
-            if (specsString.charAt(i) == '=' && level == 0) {
-                keyAcc = specsString.substring(lastCutoffPos, i).trim();
-                lastCutoffPos = i+1;
-            } else if (specsString.charAt(i) == ',' && level == 0) {
-                m.put(keyAcc, specsString.substring(lastCutoffPos, i));
-                lastCutoffPos = i+1;
-            } else if (specsString.charAt(i) == '{') {
-                ++level;
-            } else if (specsString.charAt(i) == '}') {
-                --level;
-            }
-        }
-
-        return m;
+                .withBudget(
+                        b.toAwsBudget()
+                );
     }
 
     public CreateBudgetResult createBudget(final String accountId, final String budgetSpecString) {
@@ -90,7 +84,7 @@ public class BudgetService {
         final com.amazonaws.services.budgets.model.Budget awsBudget = new com.amazonaws.services.budgets.model.Budget();
 
         if (specs.containsKey("BudgetName")) {
-           awsBudget.setBudgetName(specs.get("BudgetName"));
+            awsBudget.setBudgetName(specs.get("BudgetName"));
         }
 
         if (specs.containsKey("BudgetLimit")) {

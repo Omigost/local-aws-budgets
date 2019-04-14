@@ -10,8 +10,6 @@ import lombok.EqualsAndHashCode;
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
 
 @Data
 @Entity(name = "budget_entry")
@@ -54,7 +52,8 @@ public class Budget {
     @Lob
     CalculatedSpend calculatedSpend;
 
-    public Budget() {}
+    public Budget() {
+    }
 
     public Budget(String accountId, String name) {
         this.label = generateLabel(accountId, name);
