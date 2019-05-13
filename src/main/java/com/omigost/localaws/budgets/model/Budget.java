@@ -26,6 +26,9 @@ public class Budget {
     @NotNull
     String name;
 
+    @NotNull
+    String accountId;
+
     @Column
     @Lob
     Spend budgetLimit;
@@ -58,11 +61,13 @@ public class Budget {
     public Budget(String accountId, String name) {
         this.label = generateLabel(accountId, name);
         this.name = name;
+        this.accountId = accountId;
     }
 
     public Budget(String accountId, final com.amazonaws.services.budgets.model.Budget awsBudget) {
         this.label = generateLabel(accountId, awsBudget.getBudgetName());
         this.name = awsBudget.getBudgetName();
+        this.accountId = accountId;
 
         this.budgetLimit = awsBudget.getBudgetLimit();
         this.costTypes = awsBudget.getCostTypes();

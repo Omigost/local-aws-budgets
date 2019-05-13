@@ -7,6 +7,9 @@ import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.budgets.AWSBudgets;
 import com.amazonaws.services.budgets.AWSBudgetsClientBuilder;
 import com.amazonaws.services.budgets.model.*;
+import com.amazonaws.services.sns.AmazonSNS;
+import com.amazonaws.services.sns.model.AddPermissionRequest;
+import com.amazonaws.services.sns.model.CreateTopicRequest;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +27,9 @@ public class BudgetsIntegrationTest {
 
     @Autowired
     private WebApplicationContext wac;
+
+    @Autowired
+    AmazonSNS amazonSNS;
 
     AWSCredentialsProvider credentials() {
         return new CustomAWSCredentialsProvider();
@@ -44,6 +50,13 @@ public class BudgetsIntegrationTest {
                 .withEndpointConfiguration(getEndpointConfiguration())
                 .build();
 
+        String testArn = amazonSNS.createTopic(
+                new CreateTopicRequest()
+                    .withName("test-topic")
+        ).getTopicArn();
+
+        amazonSNS.subscribe(testArn, "https", "https://976a76db.ngrok.io/notification/receive");
+
         final Budget b = new Budget()
                 .withBudgetName("ala ma kota")
                 .withCalculatedSpend(
@@ -57,7 +70,31 @@ public class BudgetsIntegrationTest {
                         .withAccountId("abc")
         );
 
+        client.createNotification(
+                new CreateNotificationRequest()
+                    .withBudgetName("ala ma kota")
+                    .withAccountId("abc")
+                    .withNotification(
+                            new Notification()
+                                    .withNotificationType("ACTUAL")
+                                    .withComparisonOperator("GREATER_THAN")
+                                    .withThreshold(10.0d)
+                                    .withThresholdType("ABSOLUTE_VALUE")
+                                    .withNotificationState("OK")
+                    )
+                .withSubscribers(
+                        new Subscriber().withAddress(testArn).withSubscriptionType("SNS"),
+                        new Subscriber().withAddress(testArn).withSubscriptionType("SNS")
+                )
+        );
+
         assert (client.describeBudget(new DescribeBudgetRequest().withBudgetName("ala ma kota").withAccountId("abc")).getBudget().equals(b));
+
+        try {
+            Thread.sleep(100000000);
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private class CustomAWSCredentialsProvider implements AWSCredentialsProvider {

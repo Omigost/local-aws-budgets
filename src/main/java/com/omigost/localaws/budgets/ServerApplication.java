@@ -7,9 +7,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @EnableJpaAuditing
+@EnableScheduling
 @EnableJpaRepositories(basePackages = {"com.omigost.localaws.budgets.repository"})
 public class ServerApplication {
     public static void main(String[] args) {

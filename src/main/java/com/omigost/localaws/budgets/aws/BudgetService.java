@@ -1,8 +1,11 @@
 package com.omigost.localaws.budgets.aws;
 
 import com.amazonaws.services.budgets.model.*;
+import com.amazonaws.services.sns.AmazonSNS;
+import com.omigost.localaws.budgets.aws.util.ShorthandParser;
 import com.omigost.localaws.budgets.model.Budget;
 import com.omigost.localaws.budgets.repository.BudgetRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,44 +18,11 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional
+@Slf4j
 public class BudgetService {
 
     @Autowired
     private BudgetRepository budgets;
-
-    private static Map<String, String> shorthandToMap(final String specs) {
-        String specsString = specs;
-
-        if (specsString.startsWith("{")) {
-            specsString = specsString.substring(1, specsString.length() - 1);
-        }
-
-        specsString = specsString + ",";
-
-        HashMap<String, String> m = new HashMap<>();
-
-        final int len = specsString.length();
-        int level = 0;
-        int lastCutoffPos = 0;
-
-        String keyAcc = "";
-
-        for (int i = 0; i < len; ++i) {
-            if (specsString.charAt(i) == '=' && level == 0) {
-                keyAcc = specsString.substring(lastCutoffPos, i).trim();
-                lastCutoffPos = i + 1;
-            } else if (specsString.charAt(i) == ',' && level == 0) {
-                m.put(keyAcc, specsString.substring(lastCutoffPos, i));
-                lastCutoffPos = i + 1;
-            } else if (specsString.charAt(i) == '{') {
-                ++level;
-            } else if (specsString.charAt(i) == '}') {
-                --level;
-            }
-        }
-
-        return m;
-    }
 
     public DescribeBudgetsResult describeBudgets(final String accountId) {
         return new DescribeBudgetsResult()
@@ -79,7 +49,7 @@ public class BudgetService {
 
     public CreateBudgetResult createBudget(final String accountId, final String budgetSpecString) {
 
-        Map<String, String> specs = shorthandToMap(budgetSpecString);
+        Map<String, String> specs = ShorthandParser.parse(budgetSpecString);
 
         final com.amazonaws.services.budgets.model.Budget awsBudget = new com.amazonaws.services.budgets.model.Budget();
 
@@ -88,7 +58,7 @@ public class BudgetService {
         }
 
         if (specs.containsKey("BudgetLimit")) {
-            final Map<String, String> limitSpecs = shorthandToMap(specs.get("BudgetLimit"));
+            final Map<String, String> limitSpecs = ShorthandParser.parse(specs.get("BudgetLimit"));
 
             Spend s = new Spend();
 
@@ -107,7 +77,7 @@ public class BudgetService {
         // CostFilters={KeyName1=string,string,KeyName2=string,string},
 
         if (specs.containsKey("CostTypes")) {
-            final Map<String, String> costTypesSpecs = shorthandToMap(specs.get("CostTypes"));
+            final Map<String, String> costTypesSpecs = ShorthandParser.parse(specs.get("CostTypes"));
             CostTypes c = new CostTypes();
 
             if (costTypesSpecs.containsKey("IncludeTax")) {
@@ -170,7 +140,7 @@ public class BudgetService {
         }
 
         if (specs.containsKey("TimePeriod")) {
-            final Map<String, String> periodSpecs = shorthandToMap(specs.get("TimePeriod"));
+            final Map<String, String> periodSpecs = ShorthandParser.parse(specs.get("TimePeriod"));
             TimePeriod t = new TimePeriod();
 
             if (periodSpecs.containsKey("Start")) {
@@ -185,11 +155,11 @@ public class BudgetService {
         }
 
         if (specs.containsKey("CalculatedSpend")) {
-            final Map<String, String> spendSpecs = shorthandToMap(specs.get("CalculatedSpend"));
+            final Map<String, String> spendSpecs = ShorthandParser.parse(specs.get("CalculatedSpend"));
             CalculatedSpend cs = new CalculatedSpend();
 
             if (spendSpecs.containsKey("ActualSpend")) {
-                final Map<String, String> spend = shorthandToMap(spendSpecs.get("ActualSpend"));
+                final Map<String, String> spend = ShorthandParser.parse(spendSpecs.get("ActualSpend"));
                 Spend s = new Spend();
 
                 if (spend.containsKey("Amount")) {
@@ -204,7 +174,7 @@ public class BudgetService {
             }
 
             if (spendSpecs.containsKey("ForecastedSpend")) {
-                final Map<String, String> spend = shorthandToMap(spendSpecs.get("ForecastedSpend"));
+                final Map<String, String> spend = ShorthandParser.parse(spendSpecs.get("ForecastedSpend"));
                 Spend s = new Spend();
 
                 if (spend.containsKey("Amount")) {
@@ -219,6 +189,7 @@ public class BudgetService {
             }
 
             awsBudget.setCalculatedSpend(cs);
+
         }
 
         Budget budget = new Budget(accountId, awsBudget);

@@ -2,6 +2,7 @@ package com.omigost.localaws.budgets.rest;
 
 import com.omigost.localaws.budgets.ServerApplication;
 import com.omigost.localaws.budgets.aws.BudgetService;
+import com.omigost.localaws.budgets.aws.NotificationService;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -21,8 +22,15 @@ public class BudgetController {
     private static final String PARAM_AWS_ACCOUNT_ID = "AccountId";
     private static final String PARAM_AWS_BUDGET_NAME = "BudgetName";
     private static final String PARAM_AWS_BUDGET = "Budget";
+    private static final String PARAM_AWS_NOTIFICATION = "Notification";
+    private static final String PARAM_AWS_SUBSCRIBERS = "Subscribers";
+
     @Autowired
     private BudgetService budgetService;
+
+    @Autowired
+    private NotificationService notificationService;
+
     private Jackson2ObjectMapperBuilder mapperBuilder = ServerApplication.jacksonBuilder();
 
     @GetMapping("/health")
@@ -34,6 +42,8 @@ public class BudgetController {
         String accountId = null;
         String budgetName = null;
         String budgetJSON = null;
+        String notificationJSON = null;
+        String notificationSubscribers = null;
 
         if (requestParameters != null) {
             if (requestParameters.containsKey(PARAM_AWS_ACCOUNT_ID)) {
@@ -44,6 +54,12 @@ public class BudgetController {
             }
             if (requestParameters.containsKey(PARAM_AWS_BUDGET)) {
                 budgetJSON = requestParameters.get(PARAM_AWS_BUDGET).toString();
+            }
+            if (requestParameters.containsKey(PARAM_AWS_NOTIFICATION)) {
+                notificationJSON = requestParameters.get(PARAM_AWS_NOTIFICATION).toString();
+            }
+            if (requestParameters.containsKey(PARAM_AWS_SUBSCRIBERS)) {
+                notificationSubscribers = requestParameters.get(PARAM_AWS_SUBSCRIBERS).toString();
             }
         }
 
@@ -56,6 +72,8 @@ public class BudgetController {
                 return budgetService.describeBudget(accountId, budgetName);
             case CREATE_BUDGET:
                 return budgetService.createBudget(accountId, budgetJSON);
+            case CREATE_NOTIFICATION:
+                return notificationService.createNotification(accountId, budgetName, notificationJSON, notificationSubscribers);
             default:
                 return null;
         }
@@ -94,7 +112,8 @@ public class BudgetController {
         DESCRIBE_BUDGETS("DescribeBudgets"),
         DELETE_BUDGET("DeleteBudget"),
         DESCRIBE_BUDGET("DescribeBudget"),
-        CREATE_BUDGET("CreateBudget");
+        CREATE_BUDGET("CreateBudget"),
+        CREATE_NOTIFICATION("CreateNotification");
 
         private static final String awsPrefix = "AWSBudgetServiceGateway.";
         String awsApiCommand;
