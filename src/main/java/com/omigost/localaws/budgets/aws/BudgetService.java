@@ -24,6 +24,13 @@ public class BudgetService {
     @Autowired
     private BudgetRepository budgets;
 
+    public DescribeBudgetsResult describeBudgets() {
+        return new DescribeBudgetsResult()
+                .withBudgets(
+                        budgets.findAll().stream().map(Budget::toAwsBudget).collect(Collectors.toList())
+                );
+    }
+
     public DescribeBudgetsResult describeBudgets(final String accountId) {
         return new DescribeBudgetsResult()
                 .withBudgets(

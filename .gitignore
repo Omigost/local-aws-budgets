@@ -2,6 +2,8 @@
 /build/
 !gradle/wrapper/gradle-wrapper.jar
 
+**TestController**
+
 ### STS ###
 .apt_generated
 .classpath

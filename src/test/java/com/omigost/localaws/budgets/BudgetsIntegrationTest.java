@@ -59,6 +59,11 @@ public class BudgetsIntegrationTest {
 
         final Budget b = new Budget()
                 .withBudgetName("ala ma kota")
+                .withBudgetLimit(
+                        new Spend()
+                            .withAmount(BigDecimal.valueOf(1500))
+                            .withUnit("USD")
+                )
                 .withCalculatedSpend(
                         new CalculatedSpend()
                                 .withActualSpend(new Spend().withAmount(new BigDecimal(22)).withUnit("USD"))
@@ -83,7 +88,6 @@ public class BudgetsIntegrationTest {
                                     .withNotificationState("OK")
                     )
                 .withSubscribers(
-                        new Subscriber().withAddress(testArn).withSubscriptionType("SNS"),
                         new Subscriber().withAddress(testArn).withSubscriptionType("SNS")
                 )
         );

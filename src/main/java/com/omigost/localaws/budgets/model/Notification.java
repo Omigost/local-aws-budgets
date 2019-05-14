@@ -98,9 +98,9 @@ public class Notification {
         this.subscribers = subscribers;
 
         this.comparisonType = null;
-        if (awsNotification.getThresholdType() != null) {
+        if (awsNotification.getComparisonOperator() != null) {
             for (ComparisonType cmpType : ComparisonType.values()) {
-                if (awsNotification.getThresholdType().equals(cmpType.getToken())) {
+                if (awsNotification.getComparisonOperator().equals(cmpType.getToken())) {
                     this.comparisonType = cmpType;
                     break;
                 }
