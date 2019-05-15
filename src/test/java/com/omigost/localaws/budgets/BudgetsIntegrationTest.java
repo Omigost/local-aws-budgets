@@ -73,9 +73,21 @@ public class BudgetsIntegrationTest {
                 new CreateBudgetRequest()
                         .withBudget(b)
                         .withAccountId("abc")
+                .withNotificationsWithSubscribers(
+                        new NotificationWithSubscribers()
+                            .withNotification(
+                                    new Notification()
+                                            .withNotificationType("ACTUAL")
+                                            .withComparisonOperator("GREATER_THAN")
+                                            .withThreshold(10.0d)
+                                            .withThresholdType("ABSOLUTE_VALUE")
+                                            .withNotificationState("OK")
+                            )
+                            .withSubscribers(new Subscriber().withAddress(testArn).withSubscriptionType("SNS"))
+                )
         );
 
-        client.createNotification(
+        /*client.createNotification(
                 new CreateNotificationRequest()
                     .withBudgetName("ala ma kota")
                     .withAccountId("abc")
@@ -90,7 +102,7 @@ public class BudgetsIntegrationTest {
                 .withSubscribers(
                         new Subscriber().withAddress(testArn).withSubscriptionType("SNS")
                 )
-        );
+        );*/
 
         assert (client.describeBudget(new DescribeBudgetRequest().withBudgetName("ala ma kota").withAccountId("abc")).getBudget().equals(b));
 

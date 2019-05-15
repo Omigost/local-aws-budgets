@@ -6,6 +6,7 @@ import com.omigost.localaws.budgets.aws.NotificationService;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.MediaType;
@@ -18,12 +19,14 @@ import java.util.regex.Pattern;
 
 @RestController
 @RequestMapping("")
+@Slf4j
 public class BudgetController {
     private static final String PARAM_AWS_ACCOUNT_ID = "AccountId";
     private static final String PARAM_AWS_BUDGET_NAME = "BudgetName";
     private static final String PARAM_AWS_BUDGET = "Budget";
     private static final String PARAM_AWS_NOTIFICATION = "Notification";
     private static final String PARAM_AWS_SUBSCRIBERS = "Subscribers";
+    private static final String PARAM_AWS_NOTIFICATIONS_WITH_SUBSCRIBERS = "NotificationsWithSubscribers";
 
     @Autowired
     private BudgetService budgetService;
@@ -38,42 +41,57 @@ public class BudgetController {
         return "OK";
     }
 
-    private Object getEndpointResponse(final String amzTarget, final Map<String, Object> requestParameters) {
-        String accountId = null;
-        String budgetName = null;
-        String budgetJSON = null;
-        String notificationJSON = null;
-        String notificationSubscribers = null;
+    private String retrieveKey(final Map<String, Object> requestParameters, final String keyName) {
+        if (requestParameters == null) {
+            return null;
+        }
+        if (requestParameters.containsKey(keyName)) {
+            return requestParameters.get(keyName).toString();
+        }
+        return null;
+    }
 
-        if (requestParameters != null) {
-            if (requestParameters.containsKey(PARAM_AWS_ACCOUNT_ID)) {
-                accountId = requestParameters.get(PARAM_AWS_ACCOUNT_ID).toString();
-            }
-            if (requestParameters.containsKey(PARAM_AWS_BUDGET_NAME)) {
-                budgetName = requestParameters.get(PARAM_AWS_BUDGET_NAME).toString();
-            }
-            if (requestParameters.containsKey(PARAM_AWS_BUDGET)) {
-                budgetJSON = requestParameters.get(PARAM_AWS_BUDGET).toString();
-            }
-            if (requestParameters.containsKey(PARAM_AWS_NOTIFICATION)) {
-                notificationJSON = requestParameters.get(PARAM_AWS_NOTIFICATION).toString();
-            }
-            if (requestParameters.containsKey(PARAM_AWS_SUBSCRIBERS)) {
-                notificationSubscribers = requestParameters.get(PARAM_AWS_SUBSCRIBERS).toString();
+    private Object getEndpointResponse(final String amzTarget, final Map<String, Object> requestParameters) {
+        log.debug("Received new request. Printing all request variables:");
+        if (log.isDebugEnabled()){
+            if (requestParameters == null) {
+                log.debug("  --- None ---");
+            } else {
+                for (final String key : requestParameters.keySet()) {
+                    log.debug("   [" + key + "] = " + requestParameters.get(key).toString());
+                }
             }
         }
+        log.debug("End of request print. Now it will be dispatched.");
 
         switch (Command.stringToCommand(amzTarget)) {
             case DESCRIBE_BUDGETS:
-                return budgetService.describeBudgets(accountId);
+                return budgetService.describeBudgets(
+                    retrieveKey(requestParameters, PARAM_AWS_ACCOUNT_ID)
+                );
             case DELETE_BUDGET:
-                return budgetService.deleteBudget(accountId, budgetName);
+                return budgetService.deleteBudget(
+                    retrieveKey(requestParameters, PARAM_AWS_ACCOUNT_ID),
+                    retrieveKey(requestParameters, PARAM_AWS_BUDGET_NAME)
+                );
             case DESCRIBE_BUDGET:
-                return budgetService.describeBudget(accountId, budgetName);
+                return budgetService.describeBudget(
+                        retrieveKey(requestParameters, PARAM_AWS_ACCOUNT_ID),
+                        retrieveKey(requestParameters, PARAM_AWS_BUDGET_NAME)
+                );
             case CREATE_BUDGET:
-                return budgetService.createBudget(accountId, budgetJSON);
+                return budgetService.createBudget(
+                        retrieveKey(requestParameters, PARAM_AWS_ACCOUNT_ID),
+                        retrieveKey(requestParameters, PARAM_AWS_BUDGET),
+                        retrieveKey(requestParameters, PARAM_AWS_NOTIFICATIONS_WITH_SUBSCRIBERS)
+                );
             case CREATE_NOTIFICATION:
-                return notificationService.createNotification(accountId, budgetName, notificationJSON, notificationSubscribers);
+                return notificationService.createNotification(
+                        retrieveKey(requestParameters, PARAM_AWS_ACCOUNT_ID),
+                        retrieveKey(requestParameters, PARAM_AWS_BUDGET_NAME),
+                        retrieveKey(requestParameters, PARAM_AWS_NOTIFICATION),
+                        retrieveKey(requestParameters, PARAM_AWS_SUBSCRIBERS)
+                 );
             default:
                 return null;
         }

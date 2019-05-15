@@ -43,14 +43,18 @@ public class NotificationService {
         for (final Notification notification : notificationsForBudget) {
             for(final NotificationSubscriber sub: notification.getSubscribers()) {
                 if (sub.getType().equals("SNS")) {
+                    log.debug("Send SNS notification to the endpoint ["+sub.getAddress()+"]");
                     amazonSNS.publish(sub.getAddress(), "budget violated");
                 } else {
                     throw new RuntimeException("Delivery method not yet supported: "+sub.getType());
                 }
             }
         }
+
+        log.debug("Notification processing was finished.");
     }
 
+    @Transactional
     public CreateNotificationResult createNotification(final String accountId, final String budgetName, final String notificationSpecString, final String notificationSubscribersSpecString) {
         Map<String, String> specs = ShorthandParser.parse(notificationSpecString);
         final com.amazonaws.services.budgets.model.Notification awsNotification = new com.amazonaws.services.budgets.model.Notification();
@@ -89,9 +93,13 @@ public class NotificationService {
             subscribersForNotification.add(sub);
         }
 
+        log.debug("Creating new notification for budget with name ["+budgetName+"]");
+
         final Budget budget = budgets.getBudgetByLabel(Budget.generateLabel(accountId, budgetName));
         Notification notification = new Notification(accountId, budget, awsNotification, subscribersForNotification);
         notifications.save(notification);
+
+        log.debug("Notification was created.");
 
         return new CreateNotificationResult();
     }

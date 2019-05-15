@@ -24,6 +24,9 @@ public class BudgetService {
     @Autowired
     private BudgetRepository budgets;
 
+    @Autowired
+    private NotificationService notificationService;
+
     public DescribeBudgetsResult describeBudgets() {
         return new DescribeBudgetsResult()
                 .withBudgets(
@@ -31,6 +34,7 @@ public class BudgetService {
                 );
     }
 
+    @Transactional
     public DescribeBudgetsResult describeBudgets(final String accountId) {
         return new DescribeBudgetsResult()
                 .withBudgets(
@@ -38,6 +42,7 @@ public class BudgetService {
                 );
     }
 
+    @Transactional
     public DeleteBudgetResult deleteBudget(final String accountId, final String budgetName) {
         budgets.deleteBudgetByLabel(Budget.generateLabel(accountId, budgetName));
         return new DeleteBudgetResult();
@@ -54,7 +59,13 @@ public class BudgetService {
                 );
     }
 
+    @Transactional
     public CreateBudgetResult createBudget(final String accountId, final String budgetSpecString) {
+        return createBudget(accountId, budgetSpecString, null);
+    }
+
+    @Transactional
+    public CreateBudgetResult createBudget(final String accountId, final String budgetSpecString, final String notificationsWithSubscribersSpecs) {
 
         Map<String, String> specs = ShorthandParser.parse(budgetSpecString);
 
@@ -199,8 +210,25 @@ public class BudgetService {
 
         }
 
+        log.debug("Creating budget with name ["+awsBudget.getBudgetName()+"]");
+
         Budget budget = new Budget(accountId, awsBudget);
         budgets.save(budget);
+
+        /* Automatically register all notifications with subscribers */
+        if (notificationsWithSubscribersSpecs != null) {
+            log.debug("Creating notifications for budget, because notificationsWithSubscribersSpecs was specified.");
+
+            final Map<String, String> notifs = ShorthandParser.parse(notificationsWithSubscribersSpecs);
+            for (final String notifSpecs : notifs.values()) {
+                final Map<String, String> notifData = ShorthandParser.parse(notifSpecs);
+                notificationService.createNotification(accountId, budget.getName(), notifData.get("Notification"), notifData.get("Subscribers"));
+            }
+        } else {
+            log.debug("No notifications were automatically created.");
+        }
+
+        log.debug("New budget was created.");
 
         return new CreateBudgetResult();
     }
