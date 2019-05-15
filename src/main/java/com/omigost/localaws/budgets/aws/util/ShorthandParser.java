@@ -1,5 +1,8 @@
 package com.omigost.localaws.budgets.aws.util;
 
+import org.springframework.data.util.Pair;
+
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -7,7 +10,16 @@ import java.util.Map;
 
 public class ShorthandParser {
 
-    private static Map<String, String> parseMap(final String specs) {
+
+    public static Map<String, String> parseMap(final String specs) {
+        return parseAnyMap(specs).getFirst();
+    }
+
+    public static Map<String, List<String>> parseMultiMap(final String specs) {
+        return parseAnyMap(specs).getSecond();
+    }
+
+    private static Pair<Map<String, String>, Map<String, List<String>>> parseAnyMap(final String specs) {
         String specsString = specs;
 
         if (specsString.startsWith("{")) {
@@ -17,19 +29,31 @@ public class ShorthandParser {
         specsString = specsString + ",";
 
         HashMap<String, String> m = new HashMap<>();
+        HashMap<String, List<String>> mMulti = new HashMap<>();
 
         final int len = specsString.length();
         int level = 0;
         int lastCutoffPos = 0;
 
         String keyAcc = "";
+        ArrayList<String> valuesAcc = new ArrayList<>();
 
         for (int i = 0; i < len; ++i) {
             if (specsString.charAt(i) == '=' && level == 0) {
+                if (keyAcc.length() > 0) {
+                    mMulti.put(keyAcc, valuesAcc);
+                    valuesAcc = new ArrayList<>();
+                }
                 keyAcc = specsString.substring(lastCutoffPos, i).trim();
                 lastCutoffPos = i + 1;
             } else if (specsString.charAt(i) == ',' && level == 0) {
-                m.put(keyAcc, specsString.substring(lastCutoffPos, i));
+                final String val = specsString.substring(lastCutoffPos, i);
+                m.put(keyAcc, val);
+                valuesAcc.add(val);
+                if (i == len-1) {
+                    mMulti.put(keyAcc, valuesAcc);
+                    valuesAcc = new ArrayList<>();
+                }
                 lastCutoffPos = i + 1;
             } else if (specsString.charAt(i) == '{') {
                 ++level;
@@ -38,10 +62,10 @@ public class ShorthandParser {
             }
         }
 
-        return m;
+        return Pair.of(m, mMulti);
     }
 
-    private static List<String> parseArray(final String specs) {
+    public static List<String> parseArray(final String specs) {
         String specsString = specs;
 
         if (specsString.startsWith("[")) {

@@ -6,10 +6,16 @@ import com.amazonaws.services.budgets.model.Spend;
 import com.amazonaws.services.budgets.model.TimePeriod;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.springframework.data.util.Pair;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Data
 @Entity(name = "budget_entry")
@@ -42,6 +48,9 @@ public class Budget {
 
     @Column
     String budgetType;
+
+    @ManyToMany(cascade = CascadeType.ALL)
+    Map<String, FilterCollection> filters;
 
     @Column
     @Lob
@@ -76,6 +85,17 @@ public class Budget {
         this.lastUpdatedTime = awsBudget.getLastUpdatedTime();
         this.timePeriod = awsBudget.getTimePeriod();
         this.calculatedSpend = awsBudget.getCalculatedSpend();
+        this.filters = awsBudget
+                .getCostFilters()
+                .entrySet()
+                .stream()
+                .map(e -> FilterCollection.builder()
+                    .values(e.getValue())
+                    .key(e.getKey())
+                    .build()
+                )
+                .collect(Collectors.toMap(FilterCollection::getKey, Function.identity())
+        );
     }
 
     public static String generateLabel(final String accountId, final String name) {
@@ -96,7 +116,14 @@ public class Budget {
                 .withBudgetType(getBudgetType())
                 .withLastUpdatedTime(getLastUpdatedTime())
                 .withTimePeriod(getTimePeriod())
-                .withCalculatedSpend(getCalculatedSpend());
+                .withCalculatedSpend(getCalculatedSpend())
+                .withCostFilters(
+                    getFilters()
+                        .entrySet()
+                        .stream()
+                        .map(e -> Pair.of(e.getKey(), e.getValue().values))
+                        .collect(Collectors.toMap(Pair::getFirst, Pair::getSecond))
+                );
     }
 }
 

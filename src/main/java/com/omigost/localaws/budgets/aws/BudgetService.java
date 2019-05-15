@@ -7,6 +7,7 @@ import com.omigost.localaws.budgets.model.Budget;
 import com.omigost.localaws.budgets.repository.BudgetRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -91,8 +92,15 @@ public class BudgetService {
             awsBudget.setBudgetLimit(s);
         }
 
-        /* Todo: Cost filters */
-        // CostFilters={KeyName1=string,string,KeyName2=string,string},
+        if (specs.containsKey("CostFilters")) {
+            awsBudget.setCostFilters(
+                    ShorthandParser.parse(specs.get("CostFilters"))
+                        .entrySet()
+                        .stream()
+                        .map(e -> Pair.of(e.getKey(), ShorthandParser.parseArray(e.getValue())))
+                        .collect(Collectors.toMap(Pair::getFirst, Pair::getSecond))
+            );
+        }
 
         if (specs.containsKey("CostTypes")) {
             final Map<String, String> costTypesSpecs = ShorthandParser.parse(specs.get("CostTypes"));

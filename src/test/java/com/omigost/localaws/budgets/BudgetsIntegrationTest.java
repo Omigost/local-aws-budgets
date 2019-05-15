@@ -19,6 +19,9 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @EnableAutoConfiguration
@@ -64,6 +67,9 @@ public class BudgetsIntegrationTest {
                             .withAmount(BigDecimal.valueOf(1500))
                             .withUnit("USD")
                 )
+                .withCostFilters(new HashMap<String, List<String>>(){{
+                    put("KEY_A", new ArrayList<String>(){{ add("X"); }});
+                }})
                 .withCalculatedSpend(
                         new CalculatedSpend()
                                 .withActualSpend(new Spend().withAmount(new BigDecimal(22)).withUnit("USD"))
@@ -87,24 +93,11 @@ public class BudgetsIntegrationTest {
                 )
         );
 
-        /*client.createNotification(
-                new CreateNotificationRequest()
-                    .withBudgetName("ala ma kota")
-                    .withAccountId("abc")
-                    .withNotification(
-                            new Notification()
-                                    .withNotificationType("ACTUAL")
-                                    .withComparisonOperator("GREATER_THAN")
-                                    .withThreshold(10.0d)
-                                    .withThresholdType("ABSOLUTE_VALUE")
-                                    .withNotificationState("OK")
-                    )
-                .withSubscribers(
-                        new Subscriber().withAddress(testArn).withSubscriptionType("SNS")
-                )
-        );*/
+        final Budget storedBudget = client.describeBudget(new DescribeBudgetRequest().withBudgetName("ala ma kota").withAccountId("abc")).getBudget();
 
-        assert (client.describeBudget(new DescribeBudgetRequest().withBudgetName("ala ma kota").withAccountId("abc")).getBudget().equals(b));
+        assert (storedBudget.getBudgetName().equals(b.getBudgetName()));
+        assert (storedBudget.getCostFilters().containsKey("KEY_A"));
+        assert (storedBudget.getCostFilters().get("KEY_A").stream().filter(x -> x.equals("X")).count() == 1);
 
         try {
             Thread.sleep(100000000);
