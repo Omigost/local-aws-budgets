@@ -2,6 +2,7 @@ package com.omigost.localaws.budgets.aws;
 
 import com.amazonaws.services.budgets.model.CreateNotificationResult;
 import com.amazonaws.services.sns.AmazonSNS;
+import com.amazonaws.services.sns.model.MessageAttributeValue;
 import com.amazonaws.services.sns.model.PublishRequest;
 import com.omigost.localaws.budgets.aws.util.ShorthandParser;
 import com.omigost.localaws.budgets.model.Budget;
@@ -49,8 +50,8 @@ public class NotificationService {
                     amazonSNS.publish(
                             new PublishRequest()
                                 .withTargetArn(sub.getAddress())
-                                .withMessageAttributes(new HashMap<>(){{
-                                    put("contentType", "application/json");
+                                .withMessageAttributes(new HashMap<String, MessageAttributeValue>(){{
+                                    put("contentType", new MessageAttributeValue().withStringValue("application/json"));
                                 }})
                                 .withMessage("{}")
                     );
