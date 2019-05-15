@@ -2,6 +2,7 @@ package com.omigost.localaws.budgets.aws;
 
 import com.amazonaws.services.budgets.model.CreateNotificationResult;
 import com.amazonaws.services.sns.AmazonSNS;
+import com.amazonaws.services.sns.model.PublishRequest;
 import com.omigost.localaws.budgets.aws.util.ShorthandParser;
 import com.omigost.localaws.budgets.model.Budget;
 import com.omigost.localaws.budgets.model.Notification;
@@ -45,6 +46,14 @@ public class NotificationService {
                 if (sub.getType().equals("SNS")) {
                     log.debug("Send SNS notification to the endpoint ["+sub.getAddress()+"]");
                     amazonSNS.publish(sub.getAddress(), "budget violated");
+                    amazonSNS.publish(
+                            new PublishRequest()
+                                .withTargetArn(sub.getAddress())
+                                .withMessageAttributes(new HashMap<>(){{
+                                    put("contentType", "application/json");
+                                }})
+                                .withMessage("{}")
+                    );
                 } else {
                     throw new RuntimeException("Delivery method not yet supported: "+sub.getType());
                 }
