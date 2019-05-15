@@ -37,14 +37,17 @@ public class DefaultMonitor implements Monitor {
             if (budget.getCalculatedSpend() != null && budget.getBudgetLimit() != null) {
                 log.info("Look for any suitable notifications to launch...");
                 for (final Notification notification : notificationsForBudget) {
-                    if (notification.getComparisonType() != null) {
-                        log.info("Check notification status");
+                    log.info("Check notification status");
 
-                        final BigDecimal act = budget.getCalculatedSpend().getActualSpend().getAmount();
-                        final BigDecimal limit = budget.getBudgetLimit().getAmount();
-                        final Notification.ComparisonType type = notification.getComparisonType();
-                        boolean willTrigger;
+                    final BigDecimal act = budget.getCalculatedSpend().getActualSpend().getAmount();
+                    final BigDecimal limit = budget.getBudgetLimit().getAmount();
 
+                    Notification.ComparisonType type = notification.getComparisonType();
+                    boolean willTrigger;
+
+                    if (type == null) {
+                        willTrigger = true;
+                    } else {
                         switch (type) {
                             case GT:
                                 willTrigger = limit.compareTo(act) < 0;
@@ -59,10 +62,10 @@ public class DefaultMonitor implements Monitor {
                                 willTrigger = false;
                                 break;
                         }
+                    }
 
-                        if (willTrigger) {
-                            notificationService.sendNotification(budget.getAccountId(), budget.getName());
-                        }
+                    if (willTrigger) {
+                        notificationService.sendNotification(budget.getAccountId(), budget.getName());
                     }
                 }
             }
